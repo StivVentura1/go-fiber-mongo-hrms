@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -22,26 +24,50 @@ const mongoURI = "mongodb://localhost:27017" + dbName // in this case mongo is l
 
 type Employee struct {
 	ID     string  `json: "id,omitempty" bson:"_id, omitempty"`
-	dbName string  `json: "name"`
-	Salary float64 `json: "salary"`
-	Age    float64 `json: "age"`
+	Name   string  `json: "name" bson:"name"`
+	Salary float64 `json: "salary" bson:"name"`
+	Age    float64 `json: "age" bson:"name"`
 }
 
+/*
 func Connect() error {
-	client, err := mongo.NewClient(options.Client().ApplyURI(mongoURI))
+
+		client, err := mongo.NewClient(options.Client().ApplyURI(mongoURI))
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+
+		err = client.Connect(ctx)
+		db := client.Database(dbName)
+
+		if err != nil {
+			return err
+		}
+		mg = MongoInstance{
+			Client: client,
+			Db:     db,
+		}
+	}
+*/
+func Connect() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	err = client.Connect(ctx)
-	db := client.Database(dbName)
-
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI(mongoURI))
 	if err != nil {
 		return err
 	}
+
+	// Ping the database to ensure a successful connection
+	if err = client.Ping(ctx, nil); err != nil {
+		return err
+	}
+
 	mg = MongoInstance{
 		Client: client,
-		Db:     db,
+		Db:     client.Database(dbName),
 	}
+
+	return nil
 }
 
 /*
@@ -58,7 +84,7 @@ func main() {
 
 	app.Get("/employee/", func(c *fiber.Ctx) error {
 
-		query = bson.D{{}}
+		query := bson.D{{}}
 		cursor, err := mg.Db.Collection("employees").Find(c.Context(), query)
 		if err != nil {
 			return c.Status(500).SendString(err.Error())
@@ -141,7 +167,8 @@ func main() {
 	})
 	app.Delete("/employee/:id", func(c *fiber.Ctx) error {
 
-		employeeID, err := primitive.ObjectIDFromHex(c.Params("id"))
+		idParam := c.Params("id")
+		employeeID, err := primitive.ObjectIDFromHex(idParam)
 
 		if err != nil {
 			return c.SendStatus(400)
