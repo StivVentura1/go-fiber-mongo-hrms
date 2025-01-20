@@ -23,7 +23,7 @@ const dbName = "fiber-hrms"
 const mongoURI = "mongodb://localhost:27017" + dbName // in this case mongo is local
 
 type Employee struct {
-	ID     string  `json: "id,omitempty" bson:"_id, omitempty"`
+	ID     string  `json: "id,omitempty" bson:"_id,omitempty"`
 	Name   string  `json: "name" bson:"name"`
 	Salary float64 `json: "salary" bson:"name"`
 	Age    float64 `json: "age" bson:"name"`
